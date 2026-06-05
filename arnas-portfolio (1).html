@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arnas Kumar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0a0a0c;
+    --surface:rgba(22,22,26,0.72);
+    --surface-solid:#16161a;
+    --text:#ece8e1;
+    --text2:#9a9590;
+    --text3:#6b6661;
+    --accent:#c9a96e;
+    --accent-dim:rgba(201,169,110,0.15);
+    --border:rgba(255,255,255,0.07);
+    --font:'Instrument Sans',-apple-system,sans-serif;
+  }
+  html,body{height:100%;overflow:hidden}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+
+  #bg-canvas{position:fixed;inset:0;z-index:0}
+
+  .ui-layer{position:fixed;inset:0;z-index:10;pointer-events:none}
+  .ui-layer *{pointer-events:auto}
+
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    padding:1.25rem 2.5rem;display:flex;justify-content:space-between;align-items:center;
+  }
+  .nav-logo{font-size:0.95rem;font-weight:600;letter-spacing:-0.02em;color:var(--text);text-decoration:none;opacity:0.9}
+  .nav-hint{font-size:0.7rem;color:var(--text3);letter-spacing:0.04em}
+
+  #stage{
+    position:fixed;inset:0;z-index:5;
+    perspective:1400px;perspective-origin:50% 50%;
+    display:flex;align-items:center;justify-content:center;
+  }
+  #carousel{
+    position:relative;width:100%;height:100%;
+    transform-style:preserve-3d;
+  }
+
+  .panel{
+    position:absolute;left:50%;top:50%;
+    width:min(920px,calc(100vw - 3rem));
+    max-height:calc(100vh - 8rem);
+    overflow-y:auto;
+    transform-style:preserve-3d;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.5s ease;
+    margin-left:calc(min(920px,calc(100vw - 3rem)) / -2);
+    margin-top:-40vh;
+    scrollbar-width:thin;
+    scrollbar-color:var(--text3) transparent;
+  }
+  .panel.active{opacity:1;pointer-events:auto}
+  .panel::-webkit-scrollbar{width:4px}
+  .panel::-webkit-scrollbar-thumb{background:var(--text3);border-radius:2px}
+
+  .panel-card{
+    background:var(--surface);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border:1px solid var(--border);border-radius:20px;padding:clamp(2rem,4vw,3rem);
+    box-shadow:0 24px 80px rgba(0,0,0,0.45);
+  }
+
+  .label{font-size:0.68rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:0.75rem}
+  .title{font-size:clamp(1.75rem,4vw,2.75rem);font-weight:600;line-height:1.12;letter-spacing:-0.03em;margin-bottom:1rem}
+  .body{font-size:1rem;color:var(--text2);line-height:1.7;font-weight:400;max-width:52ch}
+  .body + .body{margin-top:1rem}
+
+  .hero-panel{text-align:center;padding-top:2rem}
+  .hero-panel .title{font-size:clamp(2.5rem,6vw,4.5rem);margin-bottom:0.5rem}
+  .hero-panel .role{font-size:clamp(1rem,2vw,1.2rem);color:var(--text2);font-weight:400;margin-bottom:2rem;letter-spacing:-0.01em}
+  .hero-panel .intro{font-size:0.95rem;color:var(--text3);max-width:42ch;margin:0 auto 2.5rem;line-height:1.65}
+  .hero-actions{display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap}
+  .btn{
+    padding:0.7rem 1.5rem;border-radius:980px;font-family:var(--font);font-size:0.85rem;font-weight:500;
+    cursor:pointer;text-decoration:none;border:none;transition:all 0.25s;
+  }
+  .btn-fill{background:var(--accent);color:var(--bg)}
+  .btn-fill:hover{background:#d4b87a}
+  .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+  .about-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:2.5rem;align-items:start;margin-top:0.5rem}
+  .about-aside{display:flex;flex-direction:column;gap:1rem}
+  .about-fact{
+    padding:1.1rem 1.25rem;background:var(--accent-dim);border:1px solid rgba(201,169,110,0.2);
+    border-radius:12px;
+  }
+  .about-fact .fact-label{font-size:0.65rem;color:var(--accent);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.3rem;font-weight:500}
+  .about-fact .fact-value{font-size:0.9rem;color:var(--text);line-height:1.5}
+  .tags{display:flex;flex-wrap:wrap;gap:0.45rem;margin-top:1.5rem}
+  .tag{padding:0.35rem 0.8rem;border:1px solid var(--border);border-radius:980px;font-size:0.75rem;color:var(--text2)}
+
+  .project-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+  .project-counter{font-size:0.75rem;color:var(--text3);font-weight:500}
+  .project-arrows{display:flex;gap:0.5rem}
+  .arrow-btn{
+    width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:transparent;
+    color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:border-color 0.2s,background 0.2s;font-size:1rem;
+  }
+  .arrow-btn:hover{border-color:var(--accent);background:var(--accent-dim)}
+  .project-slide{min-height:280px}
+  .project-meta{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem}
+  .project-tag{font-size:0.65rem;padding:0.25rem 0.6rem;border-radius:980px;background:rgba(255,255,255,0.04);color:var(--text3);border:1px solid var(--border)}
+  .project-name{font-size:1.35rem;font-weight:600;letter-spacing:-0.02em;margin-bottom:0.75rem}
+  .project-desc{font-size:0.9rem;color:var(--text2);line-height:1.65;margin-bottom:1.25rem}
+  .project-stack{display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:1rem}
+  .stack-item{font-size:0.72rem;padding:0.25rem 0.55rem;background:rgba(255,255,255,0.04);border-radius:6px;color:var(--text3)}
+  .project-link{font-size:0.85rem;color:var(--accent);text-decoration:none;font-weight:500}
+  .project-link:hover{text-decoration:underline}
+  .project-outcome{
+    margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);
+    font-size:0.82rem;color:var(--text3);line-height:1.6;
+  }
+
+  .skills-orbit{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:0.85rem;margin-top:1.25rem;
+  }
+  .skill-block{
+    padding:1.1rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;
+  }
+  .skill-block h4{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);margin-bottom:0.65rem;font-weight:500}
+  .skill-block p{font-size:0.82rem;color:var(--text2);line-height:1.55}
+
+  .exp-list{display:flex;flex-direction:column;gap:1.75rem;margin-top:1rem}
+  .exp-item{padding-left:1.25rem;border-left:1px solid var(--border);position:relative}
+  .exp-item::before{
+    content:'';position:absolute;left:-4px;top:0.35rem;width:7px;height:7px;
+    border-radius:50%;background:var(--accent);
+  }
+  .exp-date{font-size:0.68rem;color:var(--text3);margin-bottom:0.25rem;font-weight:500}
+  .exp-role{font-size:1rem;font-weight:600;margin-bottom:0.15rem;letter-spacing:-0.01em}
+  .exp-org{font-size:0.82rem;color:var(--accent);margin-bottom:0.45rem;font-weight:400}
+  .exp-desc{font-size:0.85rem;color:var(--text2);line-height:1.6}
+
+  .contact-block{text-align:center;padding:1rem 0}
+  .contact-block .body{max-width:44ch;margin:0 auto 2rem}
+  .contact-row{display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap}
+  .contact-btn{
+    display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;
+    border:1px solid var(--border);border-radius:980px;color:var(--text);
+    text-decoration:none;font-size:0.85rem;font-weight:500;transition:all 0.25s;
+  }
+  .contact-btn:hover{border-color:var(--accent);background:var(--accent-dim)}
+  .contact-btn svg{width:16px;height:16px;opacity:0.8}
+
+  .side-nav{
+    position:fixed;right:1.75rem;top:50%;transform:translateY(-50%);z-index:100;
+    display:flex;flex-direction:column;gap:0.65rem;
+  }
+  .nav-dot{
+    width:8px;height:8px;border-radius:50%;border:1px solid var(--text3);background:transparent;
+    cursor:pointer;transition:all 0.3s;padding:0;
+  }
+  .nav-dot.active{background:var(--accent);border-color:var(--accent);transform:scale(1.3)}
+  .nav-dot:hover{border-color:var(--accent)}
+
+  .progress-bar{
+    position:fixed;bottom:0;left:0;height:2px;background:var(--accent);z-index:100;
+    transition:width 0.6s cubic-bezier(0.16,1,0.3,1);width:0;
+  }
+
+  .nav-keys{
+    position:fixed;bottom:1.75rem;left:50%;transform:translateX(-50%);z-index:100;
+    display:flex;align-items:center;gap:1rem;font-size:0.68rem;color:var(--text3);
+  }
+  .nav-keys kbd{
+    padding:0.2rem 0.45rem;border:1px solid var(--border);border-radius:4px;
+    font-family:var(--font);font-size:0.62rem;color:var(--text2);
+  }
+
+  @media(max-width:768px){
+    nav{padding:1rem 1.25rem}
+    .nav-hint{display:none}
+    .about-grid{grid-template-columns:1fr}
+    .skills-orbit{grid-template-columns:1fr 1fr}
+    .side-nav{right:0.75rem}
+    .panel{max-height:calc(100vh - 6rem);margin-top:-38vh}
+  }
+  @media(max-width:480px){
+    .skills-orbit{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<nav>
+  <a href="#" class="nav-logo" data-goto="0">Arnas Kumar</a>
+  <span class="nav-hint">Scroll or use arrow keys to explore</span>
+</nav>
+
+<div id="stage">
+  <div id="carousel">
+
+    <div class="panel active" data-index="0">
+      <div class="panel-card hero-panel">
+        <p class="label">Portfolio · 2026</p>
+        <h1 class="title">Arnas Kumar</h1>
+        <p class="role">Software engineer focused on AI and distributed systems</p>
+        <p class="intro">Recent graduate from Michigan State. I like building things that work under real constraints: regulated healthcare, network scale, tight deadlines.</p>
+        <div class="hero-actions">
+          <button class="btn btn-fill" data-goto="2">See my work</button>
+          <button class="btn btn-ghost" data-goto="1">About me</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-index="1">
+      <div class="panel-card">
+        <p class="label">About</p>
+        <h2 class="title">A bit about who I am.</h2>
+        <div class="about-grid">
+          <div>
+            <p class="body">I grew up curious about how things connect. That turned into late nights debugging Python scripts, then hackathons, then internships where the problems actually mattered to people.</p>
+            <p class="body">I'm a CS grad from Michigan State with minors in data science, computational math, and business. I pick up ideas quickly but I'd rather go deep on one problem than skim ten.</p>
+            <p class="body">Outside of code: I help run events on campus, play pickup basketball when I can, and I'm the person friends ask when something tech-related breaks. I care about clarity, in code and in conversation.</p>
+            <div class="tags">
+              <span class="tag">East Lansing, MI</span>
+              <span class="tag">Hackathons</span>
+              <span class="tag">Teaching</span>
+              <span class="tag">Healthcare tech</span>
+              <span class="tag">Basketball</span>
+            </div>
+          </div>
+          <div class="about-aside">
+            <div class="about-fact">
+              <div class="fact-label">Education</div>
+              <div class="fact-value">B.S. Computer Science, Michigan State University. Minors in Data Science, CMSE, and Business.</div>
+            </div>
+            <div class="about-fact">
+              <div class="fact-label">What I enjoy</div>
+              <div class="fact-value">Turning messy requirements into something shippable. Working on teams where people push back thoughtfully.</div>
+            </div>
+            <div class="about-fact">
+              <div class="fact-label">Looking for</div>
+              <div class="fact-value">Full-time software or ML engineering roles where the product is real and the team moves with intention.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-index="2">
+      <div class="panel-card">
+        <div class="project-nav">
+          <div>
+            <p class="label">Work</p>
+            <h2 class="title" style="margin-bottom:0">Selected projects</h2>
+          </div>
+          <div>
+            <div class="project-counter"><span id="proj-current">1</span> / <span id="proj-total">5</span></div>
+            <div class="project-arrows" style="margin-top:0.5rem">
+              <button class="arrow-btn" id="proj-prev" aria-label="Previous project">‹</button>
+              <button class="arrow-btn" id="proj-next" aria-label="Next project">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="project-slide" id="project-slide"></div>
+      </div>
+    </div>
+
+    <div class="panel" data-index="3">
+      <div class="panel-card">
+        <p class="label">Skills</p>
+        <h2 class="title">What I work with</h2>
+        <p class="body">Languages and tools I've used in internships, coursework, and side projects. Not a checklist for its own sake; these are the ones that stuck.</p>
+        <div class="skills-orbit">
+          <div class="skill-block">
+            <h4>Languages</h4>
+            <p>Python, TypeScript, JavaScript, C/C++, SQL</p>
+          </div>
+          <div class="skill-block">
+            <h4>Frontend</h4>
+            <p>React, HTML/CSS, Tailwind</p>
+          </div>
+          <div class="skill-block">
+            <h4>Backend</h4>
+            <p>FastAPI, Flask, REST APIs, RabbitMQ, Celery</p>
+          </div>
+          <div class="skill-block">
+            <h4>ML / AI</h4>
+            <p>OpenAI APIs, BERT, scikit-learn, PCA, KMeans, Pinecone</p>
+          </div>
+          <div class="skill-block">
+            <h4>Cloud</h4>
+            <p>AWS, GCP, Docker, Linux</p>
+          </div>
+          <div class="skill-block">
+            <h4>Data</h4>
+            <p>PostgreSQL, MySQL, Supabase, Pandas, NumPy</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-index="4">
+      <div class="panel-card">
+        <p class="label">Experience</p>
+        <h2 class="title">Where I've worked</h2>
+        <div class="exp-list">
+          <div class="exp-item">
+            <div class="exp-date">May – Jul 2025</div>
+            <div class="exp-role">Software Engineering Intern</div>
+            <div class="exp-org">Meta, Edge Network Services · California</div>
+            <div class="exp-desc">Built a pipeline to cluster and analyze large-scale user feedback. Cut triage time by roughly 40% using PCA and KMeans on production data.</div>
+          </div>
+          <div class="exp-item">
+            <div class="exp-date">Oct 2025 – May 2026</div>
+            <div class="exp-role">Student IT Assistant</div>
+            <div class="exp-org">MSU Information Technology · East Lansing</div>
+            <div class="exp-desc">Produced training videos and supported virtual classroom setups for the university IT department.</div>
+          </div>
+          <div class="exp-item">
+            <div class="exp-date">Jun – Aug 2024</div>
+            <div class="exp-role">Software Development Intern</div>
+            <div class="exp-org">IndoQubix · Health-tech</div>
+            <div class="exp-desc">Shipped full-stack features and API integrations for a patient-provider platform. Built predictive models that improved decision accuracy.</div>
+          </div>
+          <div class="exp-item">
+            <div class="exp-date">Sep 2023 – May 2025</div>
+            <div class="exp-role">Undergraduate Learning Assistant</div>
+            <div class="exp-org">MSU Dept. of Computer Science</div>
+            <div class="exp-desc">Taught Python and data structures to 150+ students in weekly labs and office hours.</div>
+          </div>
+          <div class="exp-item">
+            <div class="exp-date">Oct – Dec 2023</div>
+            <div class="exp-role">Research Assistant</div>
+            <div class="exp-org">MSU College of Medicine</div>
+            <div class="exp-desc">Worked on computer vision models for medical imaging: annotation, preprocessing, and validation.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-index="5">
+      <div class="panel-card contact-block">
+        <p class="label">Contact</p>
+        <h2 class="title">Let's talk.</h2>
+        <p class="body">I'm open to full-time roles in software engineering, ML engineering, or data systems. Send a note if something here resonated.</p>
+        <div class="contact-row">
+          <a href="mailto:kumararn@msu.edu" class="contact-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            kumararn@msu.edu
+          </a>
+          <a href="https://www.linkedin.com/in/arnas-kumar376/" target="_blank" rel="noopener" class="contact-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+            LinkedIn
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="side-nav" id="side-nav"></div>
+<div class="progress-bar" id="progress-bar"></div>
+<div class="nav-keys"><kbd>↑</kbd><kbd>↓</kbd> or scroll to navigate</div>
+
+<script>
+const PANELS = document.querySelectorAll('.panel');
+const TOTAL = PANELS.length;
+const RADIUS = 520;
+let current = 0;
+let isAnimating = false;
+let wheelLocked = false;
+
+const PROJECTS = [
+  {
+    tags: ['Capstone', 'Healthcare', 'Award winner'],
+    name: 'Enterprise Video Creator',
+    desc: 'Capstone for HAP, Michigan\'s largest health insurer. Healthcare teams describe a training video in plain language; the platform generates a script, runs compliance checks against internal policy, and queues a professional render. Built for regulated workflows with role-based access and audit logs.',
+    stack: ['React', 'TypeScript', 'FastAPI', 'PostgreSQL', 'RabbitMQ', 'Celery', 'Pinecone', 'OpenAI', 'Synthesia'],
+    outcome: 'Won capstone recognition. Handed off documentation for potential internal adoption.'
+  },
+  {
+    tags: ['Meta', 'Internship'],
+    name: 'Incident Analysis Platform',
+    desc: 'During my Meta internship on Edge Network Services, I built tooling to surface patterns in user feedback at network scale. PCA reduced dimensionality before KMeans grouped related reports so on-call engineers could spot recurring issues faster.',
+    stack: ['Python', 'PCA', 'KMeans', 'SQL', 'Data pipelines'],
+    outcome: 'Roughly 40% faster triage on the workflows it touched.'
+  },
+  {
+    tags: ['NLP', 'Full-stack'],
+    name: 'Resume Analyzer & Job Matcher',
+    desc: 'Semantic matching between resumes and job descriptions using BERT embeddings, with GPT-generated feedback on gaps. Deployed with Docker on AWS and GCP.',
+    stack: ['Python', 'BERT', 'FastAPI', 'React', 'OpenAI', 'Docker', 'AWS', 'GCP'],
+    outcome: 'End-to-end pipeline from upload to scored match with written suggestions.'
+  },
+  {
+    tags: ['Hackathon', 'Full-stack'],
+    name: 'SpartanSync',
+    desc: 'Campus coordination app built at SpartaHack 11. Real-time RSVPs, Supabase auth, group management, and ElevenLabs text-to-speech for accessibility.',
+    stack: ['React', 'TypeScript', 'Supabase', 'PostgreSQL', 'ElevenLabs'],
+    link: { url: 'https://devpost.com/software/spartansync', label: 'Devpost' },
+    outcome: 'Designed for MSU\'s 70k+ student population.'
+  },
+  {
+    tags: ['Health-tech', 'Internship'],
+    name: 'Patient-Provider Platform',
+    desc: 'At IndoQubix I worked on a health-tech web app: patient-provider flows, REST API integrations, and predictive models for clinical decision support.',
+    stack: ['Python', 'C++', 'JavaScript', 'REST', 'SQL', 'Postman'],
+    outcome: 'Improved decision accuracy on the models we shipped by about 20%.'
+  }
+];
+
+let projIndex = 0;
+
+function renderProject(i) {
+  const p = PROJECTS[i];
+  document.getElementById('proj-current').textContent = i + 1;
+  document.getElementById('proj-total').textContent = PROJECTS.length;
+  document.getElementById('project-slide').innerHTML = `
+    <div class="project-meta">${p.tags.map(t => `<span class="project-tag">${t}</span>`).join('')}</div>
+    <h3 class="project-name">${p.name}</h3>
+    <p class="project-desc">${p.desc}</p>
+    <div class="project-stack">${p.stack.map(s => `<span class="stack-item">${s}</span>`).join('')}</div>
+    ${p.link ? `<a href="${p.link.url}" target="_blank" rel="noopener" class="project-link">${p.link.label} →</a>` : ''}
+    <div class="project-outcome">${p.outcome}</div>
+  `;
+  gsap.fromTo('#project-slide', { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.45, ease: 'power2.out' });
+}
+
+document.getElementById('proj-prev').addEventListener('click', () => {
+  projIndex = (projIndex - 1 + PROJECTS.length) % PROJECTS.length;
+  renderProject(projIndex);
+});
+document.getElementById('proj-next').addEventListener('click', () => {
+  projIndex = (projIndex + 1) % PROJECTS.length;
+  renderProject(projIndex);
+});
+
+function buildSideNav() {
+  const nav = document.getElementById('side-nav');
+  const labels = ['Home', 'About', 'Work', 'Skills', 'Experience', 'Contact'];
+  labels.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', labels[i]);
+    dot.addEventListener('click', () => goTo(i));
+    nav.appendChild(dot);
+  });
+}
+
+function updatePanels(animate = true) {
+  const angleStep = 360 / TOTAL;
+  PANELS.forEach((panel, i) => {
+    let offset = i - current;
+    if (offset > TOTAL / 2) offset -= TOTAL;
+    if (offset < -TOTAL / 2) offset += TOTAL;
+
+    const angle = offset * angleStep;
+    const rad = (angle * Math.PI) / 180;
+    const x = Math.sin(rad) * RADIUS;
+    const z = Math.cos(rad) * RADIUS - RADIUS;
+    const rotY = -angle;
+    const scale = offset === 0 ? 1 : 0.88;
+    const opacity = offset === 0 ? 1 : Math.abs(offset) === 1 ? 0.35 : 0;
+
+    panel.classList.toggle('active', offset === 0);
+
+    if (animate) {
+      gsap.to(panel, {
+        x, z, rotateY: rotY, scale,
+        duration: 0.9, ease: 'power3.inOut',
+        transformPerspective: 1400,
+        overwrite: true
+      });
+    } else {
+      gsap.set(panel, { x, z, rotateY: rotY, scale, transformPerspective: 1400 });
+    }
+  });
+
+  document.querySelectorAll('.nav-dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  document.getElementById('progress-bar').style.width = ((current + 1) / TOTAL * 100) + '%';
+}
+
+function goTo(index) {
+  if (isAnimating || index === current || index < 0 || index >= TOTAL) return;
+  isAnimating = true;
+  current = index;
+  updatePanels(true);
+  setTimeout(() => { isAnimating = false; }, 900);
+}
+
+function next() { goTo((current + 1) % TOTAL); }
+function prev() { goTo((current - 1 + TOTAL) % TOTAL); }
+
+document.querySelectorAll('[data-goto]').forEach(el => {
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    goTo(parseInt(el.dataset.goto, 10));
+  });
+});
+
+let wheelAccum = 0;
+window.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (wheelLocked) return;
+  wheelAccum += e.deltaY;
+  if (Math.abs(wheelAccum) < 60) return;
+  wheelLocked = true;
+  wheelAccum > 0 ? next() : prev();
+  wheelAccum = 0;
+  setTimeout(() => { wheelLocked = false; }, 1000);
+}, { passive: false });
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+  if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+});
+
+let touchY = 0;
+window.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+window.addEventListener('touchend', e => {
+  const dy = touchY - e.changedTouches[0].clientY;
+  if (Math.abs(dy) > 50) dy > 0 ? next() : prev();
+}, { passive: true });
+
+buildSideNav();
+renderProject(0);
+updatePanels(false);
+gsap.from('.panel-card', { opacity: 0, y: 40, duration: 1, delay: 0.3, ease: 'power2.out' });
+
+(function initThree() {
+  const canvas = document.getElementById('bg-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x0a0a0c, 0.012);
+
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+  camera.position.set(0, 0, 14);
+
+  const ambient = new THREE.AmbientLight(0xc9a96e, 0.15);
+  const point = new THREE.PointLight(0xc9a96e, 0.6, 80);
+  point.position.set(8, 6, 10);
+  scene.add(ambient, point);
+
+  const coreGeo = new THREE.IcosahedronGeometry(2.2, 1);
+  const coreMat = new THREE.MeshStandardMaterial({
+    color: 0x1a1a1e, metalness: 0.85, roughness: 0.25,
+    wireframe: false, transparent: true, opacity: 0.9
+  });
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  scene.add(core);
+
+  const wireGeo = new THREE.IcosahedronGeometry(2.35, 2);
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0xc9a96e, wireframe: true, transparent: true, opacity: 0.12 });
+  const wire = new THREE.Mesh(wireGeo, wireMat);
+  scene.add(wire);
+
+  const ringGeo = new THREE.TorusGeometry(5.5, 0.015, 8, 120);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xc9a96e, transparent: true, opacity: 0.2 });
+  const ring1 = new THREE.Mesh(ringGeo, ringMat);
+  ring1.rotation.x = Math.PI / 2.8;
+  scene.add(ring1);
+
+  const ring2 = new THREE.Mesh(ringGeo.clone(), ringMat.clone());
+  ring2.scale.set(0.75, 0.75, 0.75);
+  ring2.rotation.x = Math.PI / 3.5;
+  ring2.rotation.y = Math.PI / 4;
+  scene.add(ring2);
+
+  const particles = [];
+  const pGeo = new THREE.SphereGeometry(0.025, 6, 6);
+  const pMat = new THREE.MeshBasicMaterial({ color: 0xc9a96e, transparent: true, opacity: 0.5 });
+  for (let i = 0; i < 80; i++) {
+    const m = new THREE.Mesh(pGeo, pMat.clone());
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const r = 4 + Math.random() * 8;
+    m.userData = { theta, phi, r, speed: 0.001 + Math.random() * 0.002 };
+    particles.push(m);
+    scene.add(m);
+  }
+
+  let mx = 0, my = 0;
+  document.addEventListener('mousemove', e => {
+    mx = (e.clientX / window.innerWidth - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  let t = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    t += 0.005;
+    core.rotation.y = t * 0.4;
+    core.rotation.x = t * 0.15;
+    wire.rotation.y = -t * 0.3;
+    wire.rotation.x = t * 0.1;
+    ring1.rotation.z = t * 0.2;
+    ring2.rotation.z = -t * 0.15;
+
+    particles.forEach(p => {
+      p.userData.theta += p.userData.speed;
+      const { theta, phi, r } = p.userData;
+      p.position.set(
+        r * Math.sin(phi) * Math.cos(theta),
+        r * Math.cos(phi) * 0.6,
+        r * Math.sin(phi) * Math.sin(theta)
+      );
+    });
+
+    camera.position.x += (mx * 1.5 - camera.position.x) * 0.03;
+    camera.position.y += (-my * 1 - camera.position.y) * 0.03;
+    camera.lookAt(0, 0, 0);
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+})();
+</script>
+</body>
+</html>
