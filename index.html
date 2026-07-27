@@ -174,17 +174,6 @@ body.nav-open .menu-toggle span:nth-child(3){transform:translateY(-6.5px) rotate
 .btn svg{width:16px;height:16px}
 button.btn{appearance:none;-webkit-appearance:none}
 
-.hero-stats{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:2rem;margin-top:4.5rem;padding-top:2.5rem;
-  border-top:1px solid var(--line);max-width:42rem;
-}
-.stat-num{
-  font-family:var(--display);font-weight:700;font-size:clamp(2rem,4vw,2.75rem);
-  letter-spacing:-0.04em;line-height:1;color:var(--accent);
-}
-.stat-label{margin-top:0.45rem;font-size:0.78rem;color:var(--muted);letter-spacing:0.02em}
-
 .scroll-hint{
   position:absolute;bottom:2rem;right:4rem;
   display:flex;align-items:center;gap:0.75rem;
@@ -429,12 +418,10 @@ button.btn{appearance:none;-webkit-appearance:none}
   .exp-date{text-align:left}
   .project{grid-template-columns:3rem 1fr;gap:0.85rem}
   .project-details{max-height:none;opacity:1;margin-top:0.9rem}
-  .hero-stats{grid-template-columns:1fr 1fr 1fr;gap:1rem}
   .brand-footer,.contact{padding-left:1.5rem;padding-right:1.5rem}
   .brand-marquee{font-size:clamp(1.5rem,calc((100vw - 3rem) / 9.2),3.5rem)}
 }
 @media (max-width:560px){
-  .hero-stats{grid-template-columns:1fr;gap:1.25rem}
   .btn{justify-content:center}
 }
 @media (prefers-reduced-motion:reduce){
@@ -493,20 +480,6 @@ button.btn{appearance:none;-webkit-appearance:none}
     <p class="hero-copy">
       Hi! I&rsquo;m <strong>Arnas</strong>. A software engineer who builds AI-enabled data systems, testing infrastructure, and full-stack products in ambiguous environments.
     </p>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="stat-num" data-count="2">0+</div>
-        <div class="stat-label">Years in Tech</div>
-      </div>
-      <div class="hero-stat">
-        <div class="stat-num" data-count="5">0+</div>
-        <div class="stat-label">Projects shipped</div>
-      </div>
-      <div class="hero-stat">
-        <div class="stat-num">40%</div>
-        <div class="stat-label">Faster triage @ Meta</div>
-      </div>
-    </div>
     <div class="scroll-hint" aria-hidden="true">
       <span>Scroll</span>
       <span class="scroll-hint-line"></span>
@@ -856,7 +829,7 @@ button.btn{appearance:none;-webkit-appearance:none}
   sections.forEach(s => navObs.observe(s));
 
   if (reduce || typeof gsap === 'undefined') {
-    document.querySelectorAll('.reveal, .reveal-left, .hero-line, .hero-kicker, .hero-copy, .hero-stat').forEach(el => {
+    document.querySelectorAll('.reveal, .reveal-left, .hero-line, .hero-kicker, .hero-copy').forEach(el => {
       el.style.opacity = '1';
       el.style.transform = 'none';
     });
@@ -866,7 +839,7 @@ button.btn{appearance:none;-webkit-appearance:none}
   gsap.registerPlugin(ScrollTrigger);
 
   /* Hero title */
-  gsap.set('.hero-kicker, .hero-copy, .hero-stat', { opacity: 0, y: 24 });
+  gsap.set('.hero-kicker, .hero-copy', { opacity: 0, y: 24 });
   gsap.from('.hero-line', {
     yPercent: 110,
     duration: 1.15,
@@ -874,7 +847,7 @@ button.btn{appearance:none;-webkit-appearance:none}
     stagger: 0.12,
     delay: 0.1
   });
-  gsap.to('.hero-kicker, .hero-copy, .hero-stat', {
+  gsap.to('.hero-kicker, .hero-copy', {
     opacity: 1,
     y: 0,
     duration: 0.9,
@@ -907,25 +880,6 @@ button.btn{appearance:none;-webkit-appearance:none}
         scrollTrigger: { trigger: el, start: 'top 85%' }
       }
     );
-  });
-
-  /* Count-up stats */
-  document.querySelectorAll('.stat-num[data-count]').forEach(el => {
-    const target = Number(el.dataset.count);
-    const obj = { n: 0 };
-    ScrollTrigger.create({
-      trigger: el,
-      start: 'top 90%',
-      once: true,
-      onEnter: () => {
-        gsap.to(obj, {
-          n: target,
-          duration: 1.4,
-          ease: 'power2.out',
-          onUpdate: () => { el.textContent = Math.round(obj.n) + '+'; }
-        });
-      }
-    });
   });
 })();
 </script>
